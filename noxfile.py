@@ -32,7 +32,7 @@ import nox
 SOURCE_FILES = (
     "setup.py",
     "noxfile.py",
-    #    "opensearchpy/",
+    "opensearchpy/",
     "test_opensearchpy/",
     "utils/",
     "samples/",
