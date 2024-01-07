@@ -97,51 +97,7 @@ def lint(session: Any) -> None:
         "NOXFILE_PYLINT_PARAMS_FEATURE" in session.env
         and session.env["NOXFILE_PYLINT_PARAMS_FEATURE"]
     ):
-        # tests should not require function docstrings - tests function names describe themselves;
-        # opensearchpy is generated; may require in the generator code some places
-        default_enable = [
-            "line-too-long",
-            "invalid-name",
-            "pointless-statement",
-            "unspecified-encoding",
-            "missing-function-docstring",
-        ]
-        override_enable = {
-            "test_opensearchpy/": [
-                "line-too-long",
-                # "invalid-name", lots of short functions with one or two character names
-                "pointless-statement",
-                "unspecified-encoding",
-                "redefined-outer-name",
-            ],
-            "opensearchpy/": [""],
-        }
-
-        # enable = line-too-long, invalid-name, pointless-statement, unspecified-encoding,
-        # missing-function-docstring
-        # should fail the build: redefined-outer-name, , line-too-long, invalid-name,
-        # pointless-statement,
-        # import-outside-toplevel, unused-variable, unexpected-keyword-arg,
-        # raise-missing-from, invalid-unary-operand-type,
-        # attribute-defined-outside-init, unspecified-encoding
-        # should be warnings: super-with-arguments, too-few-public-methods, redefined-builtin,
-        # too-many-arguments
-        # (how many is too many?), useless-object-inheritance, too-many-locals,
-        # too-many-branches, dangerous-default-value,
-        # arguments-renamed
-        # warn, then fail later (low priority): too-many-locals, unnecessary-dunder-call,
-        # too-many-public-methods,
-        # no-else-return, invalid-overridden-method, cyclic-import
-        # does this conflict with isort? wrong-import-position
-
-        for source_file in SOURCE_FILES:
-            args = ["--disable=all"]
-            if source_file in ["test_opensearchpy/", "opensearchpy/"]:
-                args.append(f"--enable={','.join(override_enable[source_file])}")
-            else:
-                args.append(f"--enable={','.join(default_enable)}")
-            args.append(source_file)
-            session.run("pylint", *args)
+        lint_per_folder(session)
     else:
         session.run("pylint", *SOURCE_FILES)
 
@@ -161,6 +117,57 @@ def lint(session: Any) -> None:
     session.run("python", "-m", "pip", "uninstall", "--yes", "aiohttp")
     session.run("mypy", "--strict", "opensearchpy/")
     session.run("mypy", "--strict", "test_opensearchpy/test_types/sync_types.py")
+
+
+def lint_per_folder(session):
+    """
+    allows configuration of pylint rules per folder and runs a pylint command for each folder
+    :param session: the current nox session
+    """
+    # tests should not require function docstrings - tests function names describe themselves;
+    # opensearchpy is generated; may require in the generator code some places
+    default_enable = [
+        "line-too-long",
+        "invalid-name",
+        "pointless-statement",
+        "unspecified-encoding",
+        "missing-function-docstring",
+    ]
+    override_enable = {
+        "test_opensearchpy/": [
+            "line-too-long",
+            # "invalid-name", lots of short functions with one or two character names
+            "pointless-statement",
+            "unspecified-encoding",
+            "redefined-outer-name",
+        ],
+        # "opensearchpy/": [""],
+    }
+    # import-outside-toplevel
+    # enable = line-too-long, invalid-name, pointless-statement, unspecified-encoding,
+    # missing-function-docstring
+    # should fail the build: redefined-outer-name, , line-too-long, invalid-name,
+    # pointless-statement,
+    # import-outside-toplevel, unused-variable, unexpected-keyword-arg,
+    # raise-missing-from, invalid-unary-operand-type,
+    # attribute-defined-outside-init, unspecified-encoding
+    # should be warnings: super-with-arguments, too-few-public-methods, redefined-builtin,
+    # too-many-arguments
+    # (how many is too many?), useless-object-inheritance, too-many-locals,
+    # too-many-branches, dangerous-default-value,
+    # arguments-renamed
+    # warn, then fail later (low priority): too-many-locals, unnecessary-dunder-call,
+    # too-many-public-methods,
+    # no-else-return, invalid-overridden-method, cyclic-import
+    # does this conflict with isort? wrong-import-position
+    for source_file in SOURCE_FILES:
+        args = ["--disable=all"]
+        if source_file in override_enable:
+            args.append(f"--enable={','.join(override_enable[source_file])}")
+        else:
+            args.append(f"--enable={','.join(default_enable)}")
+        args.append(source_file)
+        session.run("pylint", *args)
 
 
 @nox.session()  # type: ignore
