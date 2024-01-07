@@ -207,12 +207,12 @@ def test_matches_with_no_name_always_matches() -> None:
 
 def test_matches_accepts_wildcards() -> None:
     # pylint: disable=missing-function-docstring
-    class MyDoc(document.Document):
+    class IndexGlobbingDoc(document.Document):
         class Index:
             name = "my-*"
 
-    assert MyDoc._matches({"_index": "my-index"})
-    assert not MyDoc._matches({"_index": "not-my-index"})
+    assert IndexGlobbingDoc._matches({"_index": "my-index"})
+    assert not IndexGlobbingDoc._matches({"_index": "not-my-index"})
 
 
 def test_assigning_attrlist_to_field() -> None:
